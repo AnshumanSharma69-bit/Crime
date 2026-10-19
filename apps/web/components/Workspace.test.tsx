@@ -63,6 +63,11 @@ describe('source status indicator', () => {
     mockApi({ status: { items: [{ slug: 'a', name: 'A', status: 'connected', lastSuccessAt: '2026-10-09T09:45:00Z' }, { slug: 'b', name: 'B', status: 'unsupported', lastSuccessAt: null }] } }); render(<Workspace />);
     expect(await screen.findByText(/Sources connected: 1 of 2/)).toBeTruthy(); expect(screen.getByText(/Last successful sync: .*3:15/)).toBeTruthy();
   });
+  it('does not count development fixture sources among the real ones', async () => {
+    const it = (slug: string, status: string) => ({ slug, name: slug, status, lastSuccessAt: null });
+    mockApi({ status: { items: [it('a', 'connected'), it('b', 'requires_configuration'), it('dev-fixture-police', 'manual_import'), it('dev-fixture-news', 'manual_import')] } }); render(<Workspace />);
+    expect(await screen.findByText(/Sources connected: 1 of 2/)).toBeTruthy();
+  });
   it('says "unknown" when the status API fails', async () => {
     mockApi({ down: true }); render(<Workspace />); expect(await screen.findByText(/Last successful sync: unknown/)).toBeTruthy();
   });

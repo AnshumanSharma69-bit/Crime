@@ -6,10 +6,15 @@ import { CATEGORY_LABELS, type IncidentDTOType } from '@crimelens/shared';
 import { toneOf, TONE_HEX } from '../lib/tone';
 import type { Bbox } from '../lib/api';
 
-const STYLE: maplibregl.StyleSpecification | string = process.env.NEXT_PUBLIC_MAP_STYLE_URL || {
+// Tuned from screenshots: 0.45 was too dim to read street names, 0.8 was glaring against the dark interface. Dark theme sits between; light theme shows the plain map.
+const RASTER_PAINT = {
+  dark: { 'raster-brightness-max': 0.62, 'raster-brightness-min': 0.05, 'raster-contrast': 0.3, 'raster-saturation': -0.6 },
+  light: { 'raster-brightness-max': 1, 'raster-brightness-min': 0, 'raster-contrast': 0, 'raster-saturation': -0.2 },
+} as const;
+const styleFor = (theme: 'dark' | 'light'): maplibregl.StyleSpecification | string => process.env.NEXT_PUBLIC_MAP_STYLE_URL || {
   version: 8,
   sources: { base: { type: 'raster', tiles: ['https://tile.openstreetmap.org/{z}/{x}/{y}.png'], tileSize: 256, maxzoom: 19, attribution: '© OpenStreetMap contributors' } },
-  layers: [{ id: 'base', type: 'raster', source: 'base', paint: { 'raster-brightness-max': 0.8, 'raster-brightness-min': 0.05, 'raster-contrast': 0.25, 'raster-saturation': -0.6 } }],
+  layers: [{ id: 'base', type: 'raster', source: 'base', paint: { ...RASTER_PAINT[theme] } }],
 };
 const toneColor: maplibregl.ExpressionSpecification = ['match', ['get', 'tone'],
   'official', TONE_HEX.official, 'news', TONE_HEX.news, 'corroborated', TONE_HEX.corroborated, TONE_HEX.disputed];
@@ -22,8 +27,8 @@ function toGeoJSON(items: IncidentDTOType[]): GeoJSON.FeatureCollection {
   })) };
 }
 
-export default function MapView({ items, selectedId, onSelect, center, onBounds }: {
-  items: IncidentDTOType[]; selectedId: string | null; onSelect: (id: string) => void; center: [number, number]; onBounds?: (b: Bbox) => void;
+export default function MapView({ items, selectedId, onSelect, center, onBounds, theme = 'dark' }: {
+  items: IncidentDTOType[]; selectedId: string | null; onSelect: (id: string) => void; center: [number, number]; onBounds?: (b: Bbox) => void; theme?: 'dark' | 'light';
 }) {
   const box = useRef<HTMLDivElement>(null);
   const mapRef = useRef<maplibregl.Map | null>(null);
@@ -31,9 +36,10 @@ export default function MapView({ items, selectedId, onSelect, center, onBounds 
   const itemsRef = useRef(items); itemsRef.current = items;
   const onSelectRef = useRef(onSelect); onSelectRef.current = onSelect;
   const onBoundsRef = useRef(onBounds); onBoundsRef.current = onBounds;
+  const themeRef = useRef(theme); themeRef.current = theme;
 
   useEffect(() => {
-    const map = new maplibregl.Map({ container: box.current!, style: STYLE, center, zoom: 11, maxZoom: 18 });
+    const map = new maplibregl.Map({ container: box.current!, style: styleFor(themeRef.current), center, zoom: 11, maxZoom: 18 });
     mapRef.current = map;
     map.addControl(new maplibregl.NavigationControl({ showCompass: false }), 'top-right');
     map.addControl(new maplibregl.ScaleControl(), 'bottom-right');
@@ -75,6 +81,11 @@ export default function MapView({ items, selectedId, onSelect, center, onBounds 
     const ro = new ResizeObserver(() => map.resize()); ro.observe(box.current!);   // keeps the map correct when the side panel collapses
     return () => { ro.disconnect(); map.remove(); mapRef.current = null; ready.current = false; };
   }, [center]);
+
+  useEffect(() => {   // follow the light/dark toggle without rebuilding the map
+    const map = mapRef.current; if (!map) return;
+    try { if (map.getLayer('base')) for (const [k, v] of Object.entries(RASTER_PAINT[theme])) map.setPaintProperty('base', k, v); } catch { /* style not ready yet; the initial style already used this theme */ }
+  }, [theme]);
 
   useEffect(() => {
     const map = mapRef.current; if (!map) return;

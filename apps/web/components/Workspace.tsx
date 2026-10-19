@@ -93,7 +93,8 @@ export default function Workspace() {
   }, [tab, filters, bboxKey]);
   useEffect(() => { const ac = new AbortController(); fetchSourceStatus(ac.signal).then((r) => { if (!ac.signal.aborted) setSources(r ? r.items : null); }); return () => ac.abort(); }, []);
   const fixtureLoaded = Array.isArray(sources) && sources.some((x) => x.slug.startsWith('dev-fixture'));
-  const lastSync = Array.isArray(sources) ? sources.map((x) => x.lastSuccessAt).filter(Boolean).sort().pop() : null;
+  const realSources = Array.isArray(sources) ? sources.filter((x) => !x.slug.startsWith('dev-fixture')) : sources;   // fake fixture sources are not counted
+  const lastSync = Array.isArray(realSources) ? realSources.map((x) => x.lastSuccessAt).filter(Boolean).sort().pop() : null;
 
   const items = state.status === 'ok' ? state.items : [];
   const selected = items.find((i) => i.id === selectedId) ?? null;
@@ -108,7 +109,7 @@ export default function Workspace() {
         <input aria-label="Search incidents" className={`${field} pl-7`} placeholder="Search headlines and localities" value={q} onChange={(e) => setQ(e.target.value)} /></label>
       <button aria-label={collapsed ? 'Show side panel' : 'Hide side panel'} className={`${field} !w-auto`} onClick={() => setCollapsed((c) => !c)}>{collapsed ? <PanelLeftOpen size={16} aria-hidden /> : <PanelLeftClose size={16} aria-hidden />}</button>
       <button aria-label={theme === 'dark' ? 'Switch to light theme' : 'Switch to dark theme'} className={`${field} !w-auto`} onClick={toggleTheme}>{theme === 'dark' ? <Sun size={16} aria-hidden /> : <Moon size={16} aria-hidden />}</button>
-      <span className="ml-auto text-xs text-dim">Incident service: {state.status === 'ok' ? 'reachable' : state.status === 'loading' ? 'checking…' : 'unavailable'} · Sources connected: {Array.isArray(sources) ? `${sources.filter((x) => x.status === 'connected').length} of ${sources.length}` : sources === 'loading' ? '…' : 'unknown'} · Last successful sync: {Array.isArray(sources) ? (lastSync ? formatIST(lastSync) : 'never') : 'unknown'}</span>
+      <span className="ml-auto text-xs text-dim">Incident service: {state.status === 'ok' ? 'reachable' : state.status === 'loading' ? 'checking…' : 'unavailable'} · Sources connected: {Array.isArray(realSources) ? `${realSources.filter((x) => x.status === 'connected').length} of ${realSources.length}` : realSources === 'loading' ? '…' : 'unknown'} · Last successful sync: {Array.isArray(realSources) ? (lastSync ? formatIST(lastSync) : 'never') : 'unknown'}</span>
     </header>
     {fixtureLoaded && <div role="status" className="border-b border-line px-4 py-1.5 text-xs" style={{ background: '#3a2f12', color: '#e0a43a' }}>Development fixture data is loaded. The incidents shown are fake. Remove them with <code>npm run seed:dev:remove</code>.</div>}
     <main className="flex min-h-0 flex-1 flex-col md:flex-row">
@@ -148,8 +149,8 @@ export default function Workspace() {
         </>}
       </aside>
       <section className="relative min-h-[40vh] flex-1">
-        <MapView items={items} selectedId={selected?.id ?? null} onSelect={setSelectedId} center={NAGPUR} onBounds={setBounds} />
-        <div className="absolute bottom-6 left-3 rounded-[6px] border border-line bg-bg1/95 p-2 text-xs text-ink shadow-lg">
+        <MapView items={items} selectedId={selected?.id ?? null} onSelect={setSelectedId} center={NAGPUR} onBounds={setBounds} theme={theme} />
+        <div className="absolute bottom-6 left-3 rounded-[6px] border border-line bg-bg1 p-2 text-xs text-ink shadow-lg">
           {(['official', 'news', 'corroborated', 'disputed'] as const).map((t) => <div key={t} className="flex items-center gap-2">
             <span className="inline-block h-2.5 w-2.5 rounded-full" style={{ background: TONE_HEX[t] }} />{{ official: 'Police report', news: 'News report', corroborated: 'Multiple sources', disputed: 'Disputed or corrected' }[t]}</div>)}
           <div className="mt-1 border-t border-line pt-1">Faint ring: approximate area</div>
