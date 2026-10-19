@@ -1,0 +1,23 @@
+@tailwind base;@tailwind components;@tailwind utilities;
+/* Colour encodes provenance, never severity: no incident type is "redder" than another. */
+:root {
+  --bg-0:#14171c; --bg-1:#1b1f26; --bg-2:#232831; --line:#2d333d;
+  --text:#e6e8ec; --text-dim:#9aa3b0;
+  --official:#4c9aff;      /* official police source */
+  --news:#e0a43a;          /* news-reported */
+  --corroborated:#4fb286;  /* multiple independent sources */
+  --disputed:#d95b57;      /* disputed or corrected */
+  --font-ui:"Noto Sans","Noto Sans Devanagari",system-ui,sans-serif;
+  --font-headline:"Newsreader","Noto Serif Devanagari",Georgia,serif; /* reports read as reports */
+  --radius:6px;
+}
+@media (prefers-reduced-motion: reduce){ *{ transition:none !important; animation:none !important; } }
+html,body{height:100%;background:var(--bg-0);color:var(--text);font-family:var(--font-ui)}
+:focus-visible{outline:2px solid var(--official);outline-offset:2px}
+.maplibregl-popup-content{background:var(--bg-2);color:var(--text);border:1px solid var(--line);border-radius:var(--radius);font-family:var(--font-ui);font-size:13px}
+.maplibregl-popup-tip{display:none}
+
+:root[data-theme="light"]{
+  --bg-0:#f4f5f7; --bg-1:#ffffff; --bg-2:#eceff3; --line:#d5dae1; --text:#1a1f27; --text-dim:#5b6573;
+  --official:#1f6fdc; --news:#b67a10; --corroborated:#2a8a5f; --disputed:#c0392b;
+}

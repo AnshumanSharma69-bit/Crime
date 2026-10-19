@@ -1,0 +1,43 @@
+# `docker compose up -d db`            database only (use with `npm run dev`)
+# `docker compose --profile app up -d` database + API + worker + web (images UNTESTED in the authoring sandbox)
+services:
+  db:
+    image: postgis/postgis:16-3.4
+    environment:
+      POSTGRES_USER: crimelens
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-crimelens_dev_only}
+      POSTGRES_DB: crimelens
+    ports: ["5432:5432"]
+    volumes: ["pgdata:/var/lib/postgresql/data"]
+    healthcheck: { test: ["CMD-SHELL", "pg_isready -U crimelens"], interval: 5s, retries: 12 }
+  api:
+    profiles: ["app"]
+    build: { context: ., dockerfile: apps/api/Dockerfile }
+    environment: &apienv
+      DATABASE_URL: postgresql://crimelens:${POSTGRES_PASSWORD:-crimelens_dev_only}@db:5432/crimelens
+      PORT: "4000"
+      CORS_ORIGIN: ${CORS_ORIGIN:-http://localhost:3000}
+      ADMIN_JWT_SECRET: ${ADMIN_JWT_SECRET:-}
+      CRAWLER_CONTACT: ${CRAWLER_CONTACT:-}
+      INGEST_INTERVAL_MINUTES: ${INGEST_INTERVAL_MINUTES:-30}
+      LLM_EXTRACTION_ENABLED: ${LLM_EXTRACTION_ENABLED:-false}
+      ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY:-}
+      LLM_MODEL: ${LLM_MODEL:-}
+      GEOCODER_PROVIDER: ${GEOCODER_PROVIDER:-}
+      GEOCODER_URL: ${GEOCODER_URL:-}
+    depends_on: { db: { condition: service_healthy } }
+    ports: ["4000:4000"]
+  worker:
+    profiles: ["app"]
+    build: { context: ., dockerfile: apps/api/Dockerfile }
+    command: ["npx", "tsx", "apps/api/src/worker.ts"]
+    environment: *apienv
+    depends_on: [api]
+    restart: unless-stopped
+  web:
+    profiles: ["app"]
+    build: { context: ., dockerfile: apps/web/Dockerfile, args: { NEXT_PUBLIC_API_URL: "${PUBLIC_API_URL:-http://localhost:4000}" } }
+    ports: ["3000:3000"]
+    depends_on: [api]
+volumes:
+  pgdata:

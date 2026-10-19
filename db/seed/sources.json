@@ -1,0 +1,35 @@
+[
+  {
+    "slug": "nagpur-police-press-notes",
+    "name": "Nagpur City Police: press releases",
+    "type": "official_police",
+    "url": "https://nagpurpolice.gov.in/press-releases.php",
+    "city": "nagpur",
+    "collectionMethod": "html_listing",
+    "status": "requires_configuration",
+    "parserStatus": "not_implemented",
+    "termsNotes": "Checked 17 Oct 2026 with a fetch tool: server-rendered table (title, date, PDF link; ?page=N; ~2 pressnotes a day plus occasional press conferences). The one PDF examined is Marathi text in a legacy font encoding (converted by CrimeLens). Terms (Marathi) allow lawful use only and reserve all site content as the department's copyright; they say nothing about automated access. robots.txt returned 404 on 18 Oct 2026 (no restrictions; CrimeLens re-checks it on every run). The disclaimer and privacy pages were not read. See docs/POLICE_SOURCE_NOTES.md."
+  },
+  {
+    "slug": "nagpur-police-dashboard",
+    "name": "Nagpur Police crime/traffic statistics dashboard",
+    "type": "official_dataset",
+    "url": "https://dashboard.nagpurpolice.in",
+    "city": "nagpur",
+    "collectionMethod": "manual_import",
+    "status": "requires_configuration",
+    "parserStatus": "not_implemented",
+    "termsNotes": "Linked from the police homepage. Contents, definitions, and access method NOT inspected."
+  },
+  {
+    "slug": "ncrb-crime-in-india",
+    "name": "NCRB: Crime in India (annual statistics)",
+    "type": "statistical",
+    "url": "https://ncrb.gov.in",
+    "city": null,
+    "collectionMethod": "manual_import",
+    "status": "manual_import",
+    "parserStatus": "not_implemented",
+    "termsNotes": "Annual aggregate tables. Import with source, period, definitions and units preserved. Specific publication URLs to be added after verification."
+  }
+]

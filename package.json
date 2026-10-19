@@ -1,0 +1,22 @@
+{
+  "name": "crimelens",
+  "private": true,
+  "workspaces": [
+    "packages/*",
+    "apps/*"
+  ],
+  "scripts": {
+    "db:up": "docker compose up -d db",
+    "test": "npm test --workspaces --if-present",
+    "db:setup": "npm run db:setup -w @crimelens/api",
+    "dev:api": "npm run dev -w @crimelens/api",
+    "dev:web": "npm run dev -w @crimelens/web",
+    "dev": "node scripts/dev.mjs",
+    "seed:dev": "npm run seed:dev -w @crimelens/api -- --yes-fake-data",
+    "seed:dev:remove": "npm run seed:dev -w @crimelens/api -- --remove",
+    "ingest:once": "npm run ingest:once -w @crimelens/api"
+  },
+  "engines": {
+    "node": ">=22.9"
+  }
+}
