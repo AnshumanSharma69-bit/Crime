@@ -38,7 +38,7 @@ function Detail({ i, onBack }: { i: IncidentDTOType; onBack: () => void }) {
       <dt>Event date</dt><dd className="text-ink">{i.eventDate ? formatIST(i.eventDate) : 'Not stated'}</dd>
       <dt>Published</dt><dd className="text-ink">{formatIST(i.publishedAt)}</dd>
       <dt>Last updated</dt><dd className="text-ink">{formatIST(i.updatedAt)}</dd>
-      <dt>Location</dt><dd className="text-ink">{i.locality ?? 'Unknown'}{i.location ? ` (${i.location.precision.replace(/_/g, ' ')}, ${i.location.confidence} confidence)` : ' (not mapped)'}</dd>
+      <dt>Location</dt><dd className="text-ink">{i.locality ?? 'Place name not stated'}{i.location ? ` · ${i.location.precision.replace(/_/g, ' ')} position, ${i.location.confidence} confidence` : ' · not mapped'}</dd>
     </dl>
     {approx && <p className="mt-3 rounded-[6px] border border-line p-2 text-dim">The marker shows an approximate area, not the exact location of the incident.</p>}
     {i.verificationNote && <p className="mt-3 text-dim">{i.verificationNote}</p>}

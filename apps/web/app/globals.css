@@ -14,8 +14,9 @@
 @media (prefers-reduced-motion: reduce){ *{ transition:none !important; animation:none !important; } }
 html,body{height:100%;background:var(--bg-0);color:var(--text);font-family:var(--font-ui)}
 :focus-visible{outline:2px solid var(--official);outline-offset:2px}
-.maplibregl-popup-content{background:var(--bg-2);color:var(--text);border:1px solid var(--line);border-radius:var(--radius);font-family:var(--font-ui);font-size:13px}
-.maplibregl-popup-tip{display:none}
+/* Prefixed with .maplibregl-map so these beat MapLibre's own stylesheet, which loads later and would otherwise win (white popup, light text). */
+.maplibregl-map .maplibregl-popup-content{background:var(--bg-2);color:var(--text);border:1px solid var(--line);border-radius:var(--radius);font-family:var(--font-ui);font-size:13px;box-shadow:0 4px 14px rgba(0,0,0,.35)}
+.maplibregl-map .maplibregl-popup-tip{display:none}
 
 :root[data-theme="light"]{
   --bg-0:#f4f5f7; --bg-1:#ffffff; --bg-2:#eceff3; --line:#d5dae1; --text:#1a1f27; --text-dim:#5b6573;

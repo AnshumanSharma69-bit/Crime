@@ -40,7 +40,7 @@ export function createPressNoteConnector(opts: { maxPages?: number; pageDelayMs?
         if (page > 1) await sleep(opts.pageDelayMs ?? 2000);
         const url = `${LISTING}?page=${page}`; const verdict = await robots.check(url);
         if (verdict === 'disallowed') throw new FetchError('blocked_by_robots', false);
-        if (verdict === 'unavailable') throw new FetchError('robots_unavailable', true);
+        if (verdict === 'unavailable') { const why = robots.failure(url) ?? 'unknown'; throw new FetchError(`robots_unavailable (${why})`, !/^(UNABLE_TO_|CERT_|DEPTH_ZERO|SELF_SIGNED|ERR_TLS|ERR_SSL|HOSTNAME)/.test(why)); }   // certificate problems are not transient
         const res = await f(url, { headers: { 'User-Agent': ua }, signal: AbortSignal.timeout(15_000) });
         if (!res.ok) throw new FetchError(`HTTP ${res.status}`, res.status >= 500 || res.status === 429);
         all.push(...parsePressNoteListing(await res.text()).items);

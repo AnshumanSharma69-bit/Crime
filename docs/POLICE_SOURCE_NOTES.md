@@ -13,6 +13,9 @@ These notes record what was actually read from `nagpurpolice.gov.in` with a page
 ## robots.txt (checked by the project owner, 18 Oct 2026)
 `https://nagpurpolice.gov.in/robots.txt` returned **404 Page Not Found**. Under the Robots Exclusion Protocol (RFC 9309) a 4xx answer means there are no crawl restrictions from robots.txt. That does not change the terms above: the content is still the department's copyright and the terms are still silent on automated access. CrimeLens also reads robots.txt itself on every run, before fetching the listing or any PDF, and stops if a Disallow rule applies or if robots.txt cannot be reached (5xx or network error).
 
+## Certificate problem seen from Node (19 Oct 2026)
+From the project owner's machine (Node 24, Windows), requests to `nagpurpolice.gov.in` failed with `UNABLE_TO_VERIFY_LEAF_SIGNATURE`, with any crawler name. That is consistent with the server not sending its intermediate certificate, which browsers repair silently and Node does not. `npm run fix-tls` downloads the intermediate named in the site's own certificate, checks it is the real issuer, and writes it to `certs/nagpurpolice.gov.in.pem` for `NODE_EXTRA_CA_CERTS`. Certificate verification is never switched off. If it reports that the chain ends at a root your Node does not trust, stop and ask before using `--include-root`: that makes the app trust that authority.
+
 ## Not verified (do these yourself)
 - The disclaimer and privacy-policy pages were not read.
 - Only **one** PDF was examined. Other notes and the "Press Conference" PDFs may differ in layout, encoding or whether they are scans.

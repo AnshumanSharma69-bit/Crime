@@ -14,7 +14,8 @@
     "admin:create": "tsx --env-file-if-exists=../../.env src/create-admin.ts",
     "import": "tsx --env-file-if-exists=../../.env src/import-cli.ts",
     "seed:dev": "tsx --env-file-if-exists=../../.env src/dev-seed-cli.ts",
-    "ingest:once": "tsx --env-file-if-exists=../../.env src/ingest-once.ts"
+    "ingest:once": "tsx --env-file-if-exists=../../.env src/ingest-once.ts",
+    "fix-tls": "tsx src/tls-fix-cli.ts"
   },
   "dependencies": {
     "@crimelens/shared": "*",

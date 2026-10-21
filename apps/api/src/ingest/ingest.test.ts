@@ -64,7 +64,9 @@ describe('press-note parser (assumed markup, unverified)', () => {
     const no = mk({ ok: true, status: 200, body: 'User-agent: *\nDisallow: /press-releases' });
     await expect(createPressNoteConnector().fetchItems({ fetchImpl: no as any })).rejects.toMatchObject({ message: 'blocked_by_robots', retryable: false }); expect(listing(no)).toBe(0);
     const err = mk({ ok: false, status: 503, body: '' });
-    await expect(createPressNoteConnector().fetchItems({ fetchImpl: err as any })).rejects.toMatchObject({ message: 'robots_unavailable', retryable: true }); expect(listing(err)).toBe(0);
+    await expect(createPressNoteConnector().fetchItems({ fetchImpl: err as any })).rejects.toMatchObject({ message: 'robots_unavailable (HTTP 503)', retryable: true }); expect(listing(err)).toBe(0);
+    const tlsFail = vi.fn(async () => { throw Object.assign(new TypeError('fetch failed'), { cause: { code: 'UNABLE_TO_VERIFY_LEAF_SIGNATURE' } }); });
+    await expect(createPressNoteConnector().fetchItems({ fetchImpl: tlsFail as any })).rejects.toMatchObject({ message: 'robots_unavailable (UNABLE_TO_VERIFY_LEAF_SIGNATURE)', retryable: false });   // names the cause; retrying cannot help
     const none = mk({ ok: false, status: 404, body: 'Page Not Found' });   // what nagpurpolice.gov.in returned on 18 Oct 2026: no restrictions
     expect(await createPressNoteConnector().fetchItems({ fetchImpl: none as any })).toHaveLength(3); expect(listing(none)).toBe(1);
   });

@@ -19,6 +19,7 @@
 | Run fails with `parser_found_no_items` | The site's markup changed or the parser (unverified) does not match it. Inspect the page and update `ingest/pressnotes.ts`. |
 | Document status `error` with `pdf_no_text` | The PDF has no selectable text (probably a scan). OCR is not implemented; add the incidents by import instead. |
 | Run error `blocked_by_robots` | The site's robots.txt now disallows the page for this crawler. Do not work around it. |
+| Run error `robots_unavailable (UNABLE_TO_VERIFY_LEAF_SIGNATURE)` | The site's certificate chain is incomplete (it omits the intermediate certificate; browsers repair this, Node does not). Run `npm run fix-tls -w "@crimelens/api" -- nagpurpolice.gov.in`, then set `NODE_EXTRA_CA_CERTS` to the file it writes, in the same terminal window, and run again. Never disable certificate checking. |
 | Run error `robots_unavailable` | robots.txt could not be fetched (server error or network). Nothing is crawled until it can be; it retries on the next run. |
 | `Set CRAWLER_CONTACT ...` and the command exits | The crawler must identify itself. Put an email address or URL in `.env`. |
 | Document status `error` with `legacy_font_unconverted` | The PDF uses a legacy Marathi font encoding that the converter could not turn into a plausible result. Do not feed the raw text to the extractor; add the incidents by import, or extend `ingest/legacy-font.ts`. |

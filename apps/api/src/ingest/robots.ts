@@ -1,6 +1,6 @@
 /** Minimal robots.txt support (RFC 9309): groups by user-agent, Allow/Disallow with longest match, * and $ wildcards. */
 export type RobotsVerdict = 'allowed' | 'disallowed' | 'unavailable';
-export interface RobotsGuard { check(url: string): Promise<RobotsVerdict> }
+export interface RobotsGuard { check(url: string): Promise<RobotsVerdict>; failure(url: string): string | undefined }
 type Rule = { allow: boolean; pattern: string };
 const TOKEN = 'crimelensbot';
 
@@ -28,15 +28,20 @@ export function isAllowed(rules: Rule[], target: string): boolean {
 
 /** Fetches each origin's robots.txt once per guard. 2xx: obey it. 4xx (including 404): no restrictions. 5xx or network failure: unavailable, so do not crawl this run. */
 export function createRobotsGuard(o: { fetchImpl?: typeof fetch; userAgent: string }): RobotsGuard {
-  const f = o.fetchImpl ?? fetch; const cache = new Map<string, Promise<Rule[] | 'unavailable'>>();
+  const f = o.fetchImpl ?? fetch; const cache = new Map<string, Promise<Rule[] | 'unavailable'>>(); const failures = new Map<string, string>();
   const load = async (origin: string): Promise<Rule[] | 'unavailable'> => {
     try {
       const res = await f(`${origin}/robots.txt`, { headers: { 'User-Agent': o.userAgent }, signal: AbortSignal.timeout(10_000) });
       if (res.ok) return parseRobots(await res.text());
-      return res.status >= 400 && res.status < 500 ? [] : 'unavailable';
-    } catch { return 'unavailable'; }
+      if (res.status >= 400 && res.status < 500) return [];
+      failures.set(origin, `HTTP ${res.status}`); return 'unavailable';
+    } catch (e) {
+      const err = e as Error & { cause?: { code?: string } };
+      failures.set(origin, String(err.cause?.code ?? err.name).replace(/[^A-Za-z0-9_ ]/g, '').slice(0, 60) || 'network_error'); return 'unavailable';   // an error code, never a stack trace
+    }
   };
   return {
+    failure: (url) => failures.get(new URL(url).origin),
     async check(url) {
       const u = new URL(url); if (!cache.has(u.origin)) cache.set(u.origin, load(u.origin));
       const rules = await cache.get(u.origin)!;
