@@ -24,6 +24,10 @@
 | `Set CRAWLER_CONTACT ...` and the command exits | The crawler must identify itself. Put an email address or URL in `.env`. |
 | Document status `error` with `legacy_font_unconverted` | The PDF uses a legacy Marathi font encoding that the converter could not turn into a plausible result. Do not feed the raw text to the extractor; add the incidents by import, or extend `ingest/legacy-font.ts`. |
 | Document status `error` with `http_403` / `http_404` | The site refused or removed the file. Do not work around a refusal; check the site's terms. |
+| The run prints `AI extraction: OFF (...)` | The text in brackets says what is missing. For Gemini: `LLM_EXTRACTION_ENABLED=true`, `LLM_PROVIDER=gemini`, `GEMINI_API_KEY`, `GEMINI_MODEL`, and `GEMINI_BILLING_CONFIRMED=true` after enabling billing. |
+| Gemini errors `llm_http_400` or `llm_http_404` | Usually a wrong or retired `GEMINI_MODEL` name, or a changed request format. Check the model list in Google AI Studio. |
+| `llm_blocked` or `llm_empty` on a document | The provider's safety filter refused crime-related text. Add those incidents by import instead. |
+| `deferred` is above 0 in the extraction line | Rate limited (429) or provider outage. Those documents are retried on the next run. |
 | Extraction does nothing | LLM extraction is off unless `LLM_EXTRACTION_ENABLED=true` and `ANTHROPIC_API_KEY` are set. Documents without text are skipped. |
 | Extraction errors (`invalid_extraction`) | The model's answer failed the strict schema. Nothing is queued for that document; try a different `LLM_MODEL`. |
 | Drafts never get a location | Geocoding is off unless `GEOCODER_PROVIDER=nominatim` **and** `CRAWLER_CONTACT` are set. It only handles drafts that have a place name, at most 10 new lookups per run, and rejects results more than 40 km from the city. |

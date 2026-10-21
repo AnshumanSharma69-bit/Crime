@@ -1,5 +1,6 @@
 import type pg from 'pg';
 import { IncidentCandidateSchema, type IncidentCandidate } from '@crimelens/shared';
+import { LlmTransientError } from './llm-errors';
 
 /** Adapter for an LLM or rule-based extractor. Its output is untrusted until it passes the strict schema. */
 export interface ExtractionAdapter { extract(doc: { title: string; bodyText: string }): Promise<unknown> }
@@ -7,12 +8,13 @@ export const validateExtraction = (raw: unknown): IncidentCandidate | null => { 
 
 /** Candidates always land in the review queue; nothing is published automatically. A document may yield several incidents (press notes list many cases). */
 export async function extractCandidates(pool: pg.Pool, adapter: ExtractionAdapter | null, limit = 20) {
-  if (!adapter) return { candidates: 0, errors: 0 };
+  if (!adapter) return { candidates: 0, errors: 0, deferred: 0 };
   const docs = (await pool.query(`SELECT id, title, body_text FROM source_documents WHERE status IN ('new','updated') AND body_text IS NOT NULL ORDER BY id LIMIT $1`, [limit])).rows;
-  let candidates = 0, errors = 0;
+  let candidates = 0, errors = 0, deferred = 0;
   for (const d of docs) {
     let raw: unknown; let failed = false;
-    try { raw = await adapter.extract({ title: d.title, bodyText: d.body_text }); } catch { failed = true; }
+    try { raw = await adapter.extract({ title: d.title, bodyText: d.body_text }); }
+    catch (e) { if (e instanceof LlmTransientError) { deferred++; continue; } failed = true; }   // rate limit or outage: leave the document for the next run
     const list = failed ? [] : (Array.isArray(raw) ? raw : [raw]).slice(0, 50);   // capped so a runaway answer cannot flood the queue
     const valid = list.map(validateExtraction).filter((x): x is IncidentCandidate => x !== null);
     const bad = failed ? 1 : list.length - valid.length; errors += bad;
@@ -23,7 +25,7 @@ export async function extractCandidates(pool: pg.Pool, adapter: ExtractionAdapte
     }
     await pool.query(`UPDATE source_documents SET status='processed' WHERE id=$1`, [d.id]);
   }
-  return { candidates, errors };
+  return { candidates, errors, deferred };
 }
 
 const tokens = (s: string) => new Set(s.toLowerCase().replace(/[^\p{L}\p{N}\s]/gu, ' ').split(/\s+/).filter((t) => t.length > 2));
