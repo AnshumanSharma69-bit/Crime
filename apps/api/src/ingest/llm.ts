@@ -61,8 +61,9 @@ export function llmStatus(env: NodeJS.ProcessEnv = process.env): { adapter: Extr
   if (env.LLM_PROVIDER === 'gemini') {
     if (!env.GEMINI_API_KEY) return off('set GEMINI_API_KEY');
     if (!env.GEMINI_MODEL) return off('set GEMINI_MODEL to a current model name from Google AI Studio');
-    if (env.GEMINI_BILLING_CONFIRMED !== 'true') return off("press notes contain personal data and Google may use free-tier content to improve its products: enable billing on the Google Cloud project for this key, then set GEMINI_BILLING_CONFIRMED=true");
-    return { adapter: createGeminiAdapter({ apiKey: env.GEMINI_API_KEY, model: env.GEMINI_MODEL }), message: `AI extraction: ON (gemini, ${env.GEMINI_MODEL}). Document text is sent to Google.` };
+    const billing = env.GEMINI_BILLING_CONFIRMED === 'true', free = env.GEMINI_FREE_TIER_ACCEPTED === 'true';
+    if (!billing && !free) return off('say how the key is covered. If billing is enabled on its Google Cloud project, set GEMINI_BILLING_CONFIRMED=true. If it is a free-tier key, set GEMINI_FREE_TIER_ACCEPTED=true to accept that Google may use the (redacted) text you send to improve its products. Run npm run preview:extraction -w \"@crimelens/api\" first');
+    return { adapter: createGeminiAdapter({ apiKey: env.GEMINI_API_KEY, model: env.GEMINI_MODEL }), message: billing ? `AI extraction: ON (gemini, ${env.GEMINI_MODEL}). Redacted document text is sent to Google under the paid-service terms you confirmed.` : `AI extraction: ON (gemini FREE TIER, ${env.GEMINI_MODEL}). Redacted document text is sent to Google, which may use it to improve its products.` };
   }
   if (!env.ANTHROPIC_API_KEY) return off('set ANTHROPIC_API_KEY, or set LLM_PROVIDER=gemini');
   return { adapter: createAnthropicAdapter({ apiKey: env.ANTHROPIC_API_KEY, model: env.LLM_MODEL || undefined }), message: 'AI extraction: ON (anthropic). Document text is sent to Anthropic.' };

@@ -16,10 +16,13 @@ const KEYS = Object.keys(MAP).sort((a, b) => b.length - a.length);
 const C = '\u0915-\u0939\u0958-\u095F';
 const MATRAS = '\u093E-\u094C\u093F\u0901-\u0903';
 const PRE_I = new RegExp(`ि((?:[${C}]्)*[${C}])`, 'g'), REPH = new RegExp(`((?:[${C}]्)*[${C}])([${MATRAS}]*)\uE000`, 'g');
+const isDevanagari = (ch: string | undefined) => !!ch && ch >= '\u0900' && ch <= '\u097F';
 
 function convertToken(t: string): string {
   let out = '';
   for (let i = 0; i < t.length;) {
+    // In Kruti Dev the hyphen key prints a full stop ("jk-" is "रा.", "Hkk-U;k-la-" is "भा.न्या.सं."). Between digits (dates) it stays a hyphen.
+    if (t[i] === '-') { out += isDevanagari(out[out.length - 1]) ? '.' : '-'; i++; continue; }
     const k = KEYS.find((key) => t.startsWith(key, i));
     if (k) { out += MAP[k]; i += k.length; } else { out += t[i]; i++; }
   }

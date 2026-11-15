@@ -15,7 +15,8 @@
     "import": "tsx --env-file-if-exists=../../.env src/import-cli.ts",
     "seed:dev": "tsx --env-file-if-exists=../../.env src/dev-seed-cli.ts",
     "ingest:once": "tsx --env-file-if-exists=../../.env src/ingest-once.ts",
-    "fix-tls": "tsx src/tls-fix-cli.ts"
+    "fix-tls": "tsx src/tls-fix-cli.ts",
+    "preview:extraction": "tsx --env-file-if-exists=../../.env src/preview-extraction.ts"
   },
   "dependencies": {
     "@crimelens/shared": "*",

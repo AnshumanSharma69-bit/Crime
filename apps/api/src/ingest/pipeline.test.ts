@@ -104,6 +104,12 @@ describe('extraction', () => {
     await pool.query(`UPDATE source_documents SET status='updated'`); expect((await extractCandidates(pool, adapter)).candidates).toBe(0);
     expect((await pool.query('SELECT count(*)::int AS n FROM extraction_candidates')).rows[0].n).toBe(2);
   });
+  it('sends only redacted text to the extractor, and the stored text is left as it was', async () => {
+    await pool.query(`INSERT INTO source_documents (source_id,canonical_url,title,body_text) VALUES ((SELECT id FROM sources WHERE slug='p-ok'),'https://example.org/doc/60.pdf','Doc','आरोपी नामे राहुल सुरेश पाटील वय 25 वर्ष रा. गांधीनगर नागपूर यास ताब्यात घेतले. मोबाईल 9876543210')`);
+    let seen = ''; await extractCandidates(pool, { extract: async (d) => { seen = d.bodyText; return []; } });
+    expect(seen).toContain('[NAME]'); expect(seen).toContain('[ADDRESS]'); expect(seen).toContain('[NUMBER]'); expect(seen).not.toMatch(/राहुल|पाटील|9876543210/);
+    expect((await doc(60)).body_text).toContain('राहुल');
+  });
   it('treats an empty answer as "no incidents" and an all-invalid answer as an error', async () => {
     await withBody(2); expect(await extractCandidates(pool, { extract: async () => [] })).toEqual({ candidates: 0, errors: 0, deferred: 0 }); expect((await doc(2)).status).toBe('processed');
     await withBody(3); await extractCandidates(pool, { extract: async () => [{ nope: 1 }] }); expect((await doc(3))).toMatchObject({ status: 'error', error: 'invalid_extraction' });
@@ -152,7 +158,9 @@ describe('Gemini adapter', () => {
     expect(llmStatus({ LLM_PROVIDER: 'gemini' } as any).message).toMatch(/LLM_EXTRACTION_ENABLED/);
     expect(llmStatus(base).message).toMatch(/GEMINI_API_KEY/); expect(llmStatus({ ...base, GEMINI_API_KEY: 'k' }).message).toMatch(/GEMINI_MODEL/);
     const noBilling = llmStatus({ ...base, GEMINI_API_KEY: 'k', GEMINI_MODEL: 'm' }); expect(noBilling.adapter).toBeNull(); expect(noBilling.message).toMatch(/billing/i);
-    const on = llmStatus({ ...base, GEMINI_API_KEY: 'k', GEMINI_MODEL: 'm', GEMINI_BILLING_CONFIRMED: 'true' }); expect(on.adapter).not.toBeNull(); expect(on.message).toMatch(/sent to Google/);
+    const on = llmStatus({ ...base, GEMINI_API_KEY: 'k', GEMINI_MODEL: 'm', GEMINI_BILLING_CONFIRMED: 'true' }); expect(on.adapter).not.toBeNull(); expect(on.message).toMatch(/sent to Google under the paid-service terms/);
+    const free = llmStatus({ ...base, GEMINI_API_KEY: 'k', GEMINI_MODEL: 'm', GEMINI_FREE_TIER_ACCEPTED: 'true' }); expect(free.adapter).not.toBeNull(); expect(free.message).toMatch(/FREE TIER/); expect(free.message).toMatch(/may use it/);
+    expect(noBilling.message).toMatch(/GEMINI_FREE_TIER_ACCEPTED/);
   });
   it('a rate-limited document is left for the next run, not marked as failed', async () => {
     await pool.query(`INSERT INTO source_documents (source_id,canonical_url,title,body_text) VALUES ((SELECT id FROM sources WHERE slug='p-ok'),'https://example.org/doc/50.pdf','Doc','text')`);

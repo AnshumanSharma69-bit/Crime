@@ -9,6 +9,10 @@ describe('legacy Marathi font conversion (Kruti Dev)', () => {
     ["xqUgs'kk[kk", 'गुन्हेशाखा'], ['vkjksih', 'आरोपी'], ['xqUgk nk[ky', 'गुन्हा दाखल'], ['iksyhl Bk.ks', 'पोलीस ठाणे'], ['dkjokbZ', 'कारवाई'], ['jksth', 'रोजी'], ['d:u', 'करून'],
     ['eqÌseky', 'मुद्देमाल'], ['dj.kkÚ;k', 'करणाऱ्या'], ['Jherh', 'श्रीमती'], ['fe=', 'मित्र'], ['izk.kkafrd', 'प्राणांतिक'], ['o"kZs', 'वर्षे'], ['ekxZn’kZu', 'मार्गदर्शन'], ['1]937 ¼ikp½', '1,937 (पाच)'],
   ])('%s', (input, expected) => expect(conv(input)).toBe(expected));
+  it('turns the hyphen key into a full stop after Devanagari (abbreviations), but not between digits', () => {
+    expect(conv('jk-')).toBe('रा.'); expect(conv('Hkk-U;k-la-')).toBe('भा.न्या.सं.'); expect(conv('e-iks-dk-')).toBe('म.पो.का.');
+    expect(conv('fnukad 16-10-2026')).toBe('दिनांक 16-10-2026'); expect(conv('x&')).toBe('ग-');   // the dash key stays a dash
+  });
   it('leaves English acronyms and plain numbers alone', () => {
     expect(conv('NAGPUR CITY POLICE COMMISSIONERATE')).toBe('NAGPUR CITY POLICE COMMISSIONERATE'); expect(conv('MIDC iksyhl')).toBe('MIDC पोलीस');
   });

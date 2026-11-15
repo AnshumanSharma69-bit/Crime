@@ -27,6 +27,7 @@ services:
       GEMINI_API_KEY: ${GEMINI_API_KEY:-}
       GEMINI_MODEL: ${GEMINI_MODEL:-}
       GEMINI_BILLING_CONFIRMED: ${GEMINI_BILLING_CONFIRMED:-false}
+      GEMINI_FREE_TIER_ACCEPTED: ${GEMINI_FREE_TIER_ACCEPTED:-false}
       GEOCODER_PROVIDER: ${GEOCODER_PROVIDER:-}
       GEOCODER_URL: ${GEOCODER_URL:-}
     depends_on: { db: { condition: service_healthy } }

@@ -1,19 +1,21 @@
 import type pg from 'pg';
 import { IncidentCandidateSchema, type IncidentCandidate } from '@crimelens/shared';
 import { LlmTransientError } from './llm-errors';
+import { redactForExternalApi } from './redact';
 
 /** Adapter for an LLM or rule-based extractor. Its output is untrusted until it passes the strict schema. */
 export interface ExtractionAdapter { extract(doc: { title: string; bodyText: string }): Promise<unknown> }
 export const validateExtraction = (raw: unknown): IncidentCandidate | null => { const r = IncidentCandidateSchema.safeParse(raw); return r.success ? r.data : null; };
 
 /** Candidates always land in the review queue; nothing is published automatically. A document may yield several incidents (press notes list many cases). */
-export async function extractCandidates(pool: pg.Pool, adapter: ExtractionAdapter | null, limit = 20) {
+export async function extractCandidates(pool: pg.Pool, adapter: ExtractionAdapter | null, limit = 20, o: { pauseMs?: number } = {}) {
   if (!adapter) return { candidates: 0, errors: 0, deferred: 0 };
   const docs = (await pool.query(`SELECT id, title, body_text FROM source_documents WHERE status IN ('new','updated') AND body_text IS NOT NULL ORDER BY id LIMIT $1`, [limit])).rows;
   let candidates = 0, errors = 0, deferred = 0;
-  for (const d of docs) {
+  for (const [n, d] of docs.entries()) {
+    if (n > 0 && o.pauseMs) await new Promise((r) => setTimeout(r, o.pauseMs));   // free API keys have low per-minute limits
     let raw: unknown; let failed = false;
-    try { raw = await adapter.extract({ title: d.title, bodyText: d.body_text }); }
+    try { raw = await adapter.extract({ title: redactForExternalApi(d.title).text, bodyText: redactForExternalApi(d.body_text).text }); }   // only redacted text ever leaves this machine
     catch (e) { if (e instanceof LlmTransientError) { deferred++; continue; } failed = true; }   // rate limit or outage: leave the document for the next run
     const list = failed ? [] : (Array.isArray(raw) ? raw : [raw]).slice(0, 50);   // capped so a runaway answer cannot flood the queue
     const valid = list.map(validateExtraction).filter((x): x is IncidentCandidate => x !== null);

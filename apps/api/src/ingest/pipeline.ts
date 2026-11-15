@@ -9,7 +9,7 @@ import type { Connector, RunDeps } from './types';
 export async function runPipeline(pool: pg.Pool, connectors: Connector[], deps: RunDeps, adapter: ExtractionAdapter | null, triggeredBy = 'schedule', geocoder: Geocoder | null = null) {
   const results = await runAll(pool, connectors, deps, triggeredBy);
   const bodies = await fetchDocumentBodies(pool, deps, { limit: 10 });
-  const extraction = await extractCandidates(pool, adapter, 10);
+  const extraction = await extractCandidates(pool, adapter, 10, { pauseMs: Number(process.env.LLM_PAUSE_MS ?? 4000) });
   const geocoding = await geocodeIncidents(pool, geocoder, { limit: 10 });
   return { results, bodies, extraction, geocoding };
 }

@@ -24,6 +24,7 @@
 | `Set CRAWLER_CONTACT ...` and the command exits | The crawler must identify itself. Put an email address or URL in `.env`. |
 | Document status `error` with `legacy_font_unconverted` | The PDF uses a legacy Marathi font encoding that the converter could not turn into a plausible result. Do not feed the raw text to the extractor; add the incidents by import, or extend `ingest/legacy-font.ts`. |
 | Document status `error` with `http_403` / `http_404` | The site refused or removed the file. Do not work around a refusal; check the site's terms. |
+| `[NAME]`, `[ADDRESS]` or `[NUMBER]` appear in extracted summaries | Expected: that is the redaction working. If real names or addresses survive in `previews/*.txt`, tell me the surrounding phrasing (without the names) so the patterns can be extended. |
 | The run prints `AI extraction: OFF (...)` | The text in brackets says what is missing. For Gemini: `LLM_EXTRACTION_ENABLED=true`, `LLM_PROVIDER=gemini`, `GEMINI_API_KEY`, `GEMINI_MODEL`, and `GEMINI_BILLING_CONFIRMED=true` after enabling billing. |
 | Gemini errors `llm_http_400` or `llm_http_404` | Usually a wrong or retired `GEMINI_MODEL` name, or a changed request format. Check the model list in Google AI Studio. |
 | `llm_blocked` or `llm_empty` on a document | The provider's safety filter refused crime-related text. Add those incidents by import instead. |
