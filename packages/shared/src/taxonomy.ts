@@ -11,7 +11,11 @@ export const IncidentCandidateSchema = z.object({
   headline: z.string().min(5).max(200),
   categoryCode: z.enum(CATEGORY_CODES),
   summary: z.string().min(10).max(800),
-  eventDate: z.string().datetime().nullable(),
+  // Models answer with a full timestamp (Z or +05:30) or a bare date; a bare date is read as midnight India time.
+  eventDate: z.union([
+    z.string().datetime({ offset: true }),
+    z.string().regex(/^\d{4}-\d{2}-\d{2}$/).refine((d) => Number.isFinite(Date.parse(`${d}T00:00:00+05:30`)), 'not a real date').transform((d) => `${d}T00:00:00+05:30`),
+  ]).nullable(),
   locality: z.string().max(120).nullable(),
   extractionConfidence: z.enum(['low','medium','high']),
 }).strict();
